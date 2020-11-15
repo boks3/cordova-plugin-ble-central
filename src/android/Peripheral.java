@@ -119,7 +119,6 @@ public class Peripheral extends BluetoothGattCallback {
 
     public void forceDisconnect(CallbackContext callbackContext, Activity activity) {
         currentActivity = activity;
-        forceDisconnectCallback = callbackContext;
 
         connected = false;
         connecting = false;
@@ -128,7 +127,14 @@ public class Peripheral extends BluetoothGattCallback {
             gatt.disconnect();
             gatt.close();
             gatt = null;
+            queueCleanup();
+            callbackCleanup();
+
+            PluginResult result = new PluginResult(PluginResult.Status.OK);
+            result.setKeepCallback(true);
+            callbackContext.sendPluginResult(result);
         } else {
+            forceDisconnectCallback = callbackContext;
             forceDisconnecting = true;
             gattConnect();
             Handler handler = new Handler();
@@ -209,12 +215,6 @@ public class Peripheral extends BluetoothGattCallback {
                 connectCallback.error(message);
                 connectCallback = null;
             }
-        }
-        if (forceDisconnectCallback != null) {
-            PluginResult result = new PluginResult(PluginResult.Status.OK, new JSONObject());
-            result.setKeepCallback(true);
-            forceDisconnectCallback.sendPluginResult(result);
-            forceDisconnectCallback = null;
         }
     }
 
@@ -362,7 +362,7 @@ public class Peripheral extends BluetoothGattCallback {
                         //characteristicsJSON.put("instanceId", characteristic.getInstanceId());
 
                         characteristicsJSON.put("properties", Helper.decodeProperties(characteristic));
-                            // characteristicsJSON.put("propertiesValue", characteristic.getProperties());
+                        // characteristicsJSON.put("propertiesValue", characteristic.getProperties());
 
                         if (characteristic.getPermissions() > 0) {
                             characteristicsJSON.put("permissions", Helper.decodePermissions(characteristic));
@@ -453,6 +453,12 @@ public class Peripheral extends BluetoothGattCallback {
                 forceDisconnecting = false;
                 gatt.disconnect();
                 gatt.close();
+                if (forceDisconnectCallback != null) {
+                    PluginResult result = new PluginResult(PluginResult.Status.OK, new JSONObject());
+                    result.setKeepCallback(true);
+                    forceDisconnectCallback.sendPluginResult(result);
+                    forceDisconnectCallback = null;
+                }
             } else {
                 connected = true;
                 connecting = false;
