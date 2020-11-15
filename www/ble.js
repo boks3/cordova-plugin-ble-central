@@ -146,6 +146,15 @@ module.exports = {
         cordova.exec(success, failure, 'BLE', 'disconnect', [device_id]);
     },
 
+    forceDisconnect: function (device_id, success, failure) {
+        try {
+            delete autoconnected[device_id];
+        } catch(e) {
+            // ignore error
+        }
+        cordova.exec(success, failure, 'BLE', 'forceDisconnect', [device_id]);
+    },
+
     queueCleanup: function (device_id,  success, failure) {
         cordova.exec(success, failure, 'BLE', 'queueCleanup', [device_id]);
     },
@@ -264,6 +273,12 @@ module.exports.withPromises = {
     disconnect: function(device_id) {
         return new Promise(function(resolve, reject) {
             module.exports.disconnect(device_id, resolve, reject);
+        });
+    },
+
+    forceDisconnect: function(device_id) {
+        return new Promise(function(resolve, reject) {
+            module.exports.forceDisconnect(device_id, resolve, reject);
         });
     },
 

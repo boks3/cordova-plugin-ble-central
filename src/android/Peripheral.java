@@ -57,12 +57,14 @@ public class Peripheral extends BluetoothGattCallback {
     private boolean autoconnect = false;
     private boolean connected = false;
     private boolean connecting = false;
+    private boolean forceDisconnecting = false;
     private ConcurrentLinkedQueue<BLECommand> commandQueue = new ConcurrentLinkedQueue<BLECommand>();
     private boolean bleProcessing;
 
     BluetoothGatt gatt;
 
     private CallbackContext connectCallback;
+    private CallbackContext forceDisconnectCallback;
     private CallbackContext refreshCallback;
     private CallbackContext readCallback;
     private CallbackContext writeCallback;
@@ -113,6 +115,40 @@ public class Peripheral extends BluetoothGattCallback {
             gatt = device.connectGatt(currentActivity, autoconnect, this, BluetoothDevice.TRANSPORT_LE);
         }
 
+    }
+
+    public void forceDisconnect(CallbackContext callbackContext, Activity activity) {
+        currentActivity = activity;
+        forceDisconnectCallback = callbackContext;
+
+        connected = false;
+        connecting = false;
+
+        if (gatt != null) {
+            gatt.disconnect();
+            gatt.close();
+            gatt = null;
+        } else {
+            forceDisconnecting = true;
+            gattConnect();
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (forceDisconnecting) {
+                        forceDisconnecting = false;
+                        gatt.disconnect();
+                        gatt.close();
+                    }
+                }
+            }, 1500);
+        }
+        queueCleanup();
+        callbackCleanup();
+
+        /*PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+        result.setKeepCallback(true);
+        callbackContext.sendPluginResult(result);*/
     }
 
     public void connect(CallbackContext callbackContext, Activity activity, boolean auto) {
@@ -173,6 +209,12 @@ public class Peripheral extends BluetoothGattCallback {
                 connectCallback.error(message);
                 connectCallback = null;
             }
+        }
+        if (forceDisconnectCallback != null) {
+            PluginResult result = new PluginResult(PluginResult.Status.OK, new JSONObject());
+            result.setKeepCallback(true);
+            forceDisconnectCallback.sendPluginResult(result);
+            forceDisconnectCallback = null;
         }
     }
 
@@ -407,9 +449,15 @@ public class Peripheral extends BluetoothGattCallback {
 
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             LOG.d(TAG, "onConnectionStateChange CONNECTED");
-            connected = true;
-            connecting = false;
-            gatt.discoverServices();
+            if (forceDisconnecting) {
+                forceDisconnecting = false;
+                gatt.disconnect();
+                gatt.close();
+            } else {
+                connected = true;
+                connecting = false;
+                gatt.discoverServices();
+            }
 
         } else {  // Disconnected
             LOG.d(TAG, "onConnectionStateChange DISCONNECTED");

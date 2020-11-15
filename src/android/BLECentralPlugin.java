@@ -59,6 +59,7 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
     private static final String CONNECT = "connect";
     private static final String AUTOCONNECT = "autoConnect";
     private static final String DISCONNECT = "disconnect";
+    private static final String FORCE_DISCONNECT = "forceDisconnect";
 
     private static final String QUEUE_CLEANUP = "queueCleanup";
     private static final String SET_PIN = "setPin";
@@ -188,6 +189,11 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
 
             String macAddress = args.getString(0);
             disconnect(callbackContext, macAddress);
+
+        } else if (action.equals(FORCE_DISCONNECT)) {
+
+            String macAddress = args.getString(0);
+            forceDisconnect(callbackContext, macAddress);
 
         } else if (action.equals(QUEUE_CLEANUP)) {
 
@@ -472,6 +478,22 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
             String message = "Peripheral " + macAddress + " not found.";
             LOG.w(TAG, message);
             callbackContext.error(message);
+        }
+
+    }
+
+    private void forceDisconnect(CallbackContext callbackContext, String macAddress) {
+        if (!peripherals.containsKey(macAddress) && BLECentralPlugin.this.bluetoothAdapter.checkBluetoothAddress(macAddress)) {
+            BluetoothDevice device = BLECentralPlugin.this.bluetoothAdapter.getRemoteDevice(macAddress);
+            Peripheral peripheral = new Peripheral(device);
+            peripherals.put(macAddress, peripheral);
+        }
+
+        Peripheral peripheral = peripherals.get(macAddress);
+        if (peripheral != null) {
+            peripheral.forceDisconnect(callbackContext, cordova.getActivity());
+        } else {
+            callbackContext.error("Peripheral " + macAddress + " not found.");
         }
 
     }
