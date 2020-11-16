@@ -29,6 +29,8 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Build;
 
+import android.net.Uri;
+
 import android.provider.Settings;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -57,6 +59,7 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
     private static final String CONNECT = "connect";
     private static final String AUTOCONNECT = "autoConnect";
     private static final String DISCONNECT = "disconnect";
+    private static final String FORCE_DISCONNECT = "forceDisconnect";
 
     private static final String QUEUE_CLEANUP = "queueCleanup";
     private static final String SET_PIN = "setPin";
@@ -86,6 +89,8 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
 
     private static final String START_STATE_NOTIFICATIONS = "startStateNotifications";
     private static final String STOP_STATE_NOTIFICATIONS = "stopStateNotifications";
+
+    private static final String UPGRADE_FIRMWARE = "upgradeFirmware";
 
     // callbacks
     CallbackContext discoverCallback;
@@ -184,6 +189,11 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
 
             String macAddress = args.getString(0);
             disconnect(callbackContext, macAddress);
+
+        } else if (action.equals(FORCE_DISCONNECT)) {
+
+            String macAddress = args.getString(0);
+            forceDisconnect(callbackContext, macAddress);
 
         } else if (action.equals(QUEUE_CLEANUP)) {
 
@@ -318,6 +328,13 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
             }
             removeStateListener();
             callbackContext.success();
+
+        } else if (action.equals(UPGRADE_FIRMWARE)) {
+
+            String macAddress = args.getString(0);
+            Uri uri = Uri.parse(args.getString(1));
+            int type = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
+            upgradeFirmware(callbackContext, macAddress, uri);
 
         } else if (action.equals(START_SCAN_WITH_OPTIONS)) {
             UUID[] serviceUUIDs = parseServiceUUIDList(args.getJSONArray(0));
@@ -461,6 +478,22 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
             String message = "Peripheral " + macAddress + " not found.";
             LOG.w(TAG, message);
             callbackContext.error(message);
+        }
+
+    }
+
+    private void forceDisconnect(CallbackContext callbackContext, String macAddress) {
+        if (!peripherals.containsKey(macAddress) && BLECentralPlugin.this.bluetoothAdapter.checkBluetoothAddress(macAddress)) {
+            BluetoothDevice device = BLECentralPlugin.this.bluetoothAdapter.getRemoteDevice(macAddress);
+            Peripheral peripheral = new Peripheral(device);
+            peripherals.put(macAddress, peripheral);
+        }
+
+        Peripheral peripheral = peripherals.get(macAddress);
+        if (peripheral != null) {
+            peripheral.forceDisconnect(callbackContext, cordova.getActivity());
+        } else {
+            callbackContext.error("Peripheral " + macAddress + " not found.");
         }
 
     }
@@ -835,6 +868,27 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
      */
     private void resetScanOptions() {
         this.reportDuplicates = false;
+    }
+
+    private void upgradeFirmware(final CallbackContext callbackContext, String macAddress, final Uri uri) {
+
+        final Peripheral peripheral = peripherals.get(macAddress);
+
+        if (peripheral == null) {
+            callbackContext.error("Peripheral " + macAddress + " not found.");
+            return;
+        }
+
+        if (!peripheral.isConnected()) {
+            callbackContext.error("Peripheral " + macAddress + " is not connected.");
+            return;
+        }
+
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                peripheral.upgradeFirmware(callbackContext, uri);
+            }
+        });
     }
 
 }
