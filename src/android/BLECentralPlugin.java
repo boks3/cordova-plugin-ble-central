@@ -666,10 +666,7 @@ public class BLECentralPlugin extends CordovaPlugin implements BluetoothAdapter.
                 this.serviceUUIDs = serviceUUIDs;
                 this.scanSeconds = scanSeconds;
 
-                String[] permissions = {
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                };
+                String[] permissions = { Manifest.permission.ACCESS_FINE_LOCATION };
 
                 PermissionHelper.requestPermissions(this, REQUEST_ACCESS_LOCATION, permissions);
             }
