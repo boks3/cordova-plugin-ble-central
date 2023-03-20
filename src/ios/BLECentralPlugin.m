@@ -537,7 +537,7 @@
         DFUServiceInitiator *initiator = [[DFUServiceInitiator alloc] initWithCentralManager:manager target:peripheral];
         [initiator withFirmware:firmware];
         initiator.enableUnsafeExperimentalButtonlessServiceInSecureDfu = true;
-        initiator.packetReceiptNotificationParameter = 10;
+        initiator.packetReceiptNotificationParameter = 0;
         initiator.forceDfu = false;
 
         // bind self as a delegate for everything
