@@ -541,7 +541,7 @@
         initiator.forceDfu = false;
 
         // bind self as a delegate for everything
-        // initiator.logger = self;
+        initiator.logger = self;
         initiator.delegate = self;
         initiator.progressDelegate = self;
 
@@ -556,16 +556,15 @@
 
 #pragma mark - DFU Service delegate methods
 
-// -(void)logWith:(enum LogLevel)level message:(NSString *)message {
-//     if (level == LogLevelError) {
-//         NSLog(@"ERROR: %@", message);
-//     } else if (level == LogLevelWarning) {
-//         NSLog(@"WARNING: %@", message);
-//     } else if (level == LogLevelApplication) {
-//         NSLog(@"%@", message);
-//     }
-//     // ignore other levels
-// }
+-(void)logWith:(enum LogLevel)level message:(NSString *)message {
+    NSMutableDictionary *json = [NSMutableDictionary dictionary];
+    [json setObject:@"errorLog" forKey:@"status"];
+    [json setObject:message forKey:@"errorMessage"];
+
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:json];
+    [pluginResult setKeepCallbackAsBool:TRUE];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:dfuCallbackId];
+}
 
 // handle main DFU stages (starting, validating, rebooting, ...)
 - (void)dfuStateDidChangeTo:(enum DFUState)state {
