@@ -913,6 +913,7 @@ public class Peripheral extends BluetoothGattCallback {
                 .setDisableNotification(true)
                 .setForeground(false)
                 .setRebootTime(1000)
+                .setScanTimeout(10000)
                 .setNumberOfRetries(2);
 
         // set the ZIP and start the process
