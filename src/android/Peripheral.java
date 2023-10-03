@@ -912,6 +912,7 @@ public class Peripheral extends BluetoothGattCallback {
                 .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
                 .setDisableNotification(true)
                 .setForeground(false)
+                .setRebootTime(1000)
                 .setNumberOfRetries(2);
 
         // set the ZIP and start the process
