@@ -41,8 +41,16 @@
 
         <!-- frameworks -->
         <framework src="CoreBluetooth.framework" />
+        <podspec>
+            <config>
+                <source url="https://cdn.cocoapods.org/"/>
+            </config>
+            <pods use-frameworks="true">
+                <pod name="iOSDFULibrary" spec="4.11.1"/>
+            </pods>
+        </podspec>
 
-        <!-- iOS Permissions -->
+        <!-- iOS SPermissions -->
         <preference name="BLUETOOTH_USAGE_DESCRIPTION" default=" " />
         <config-file target="*-Info.plist" parent="NSBluetoothPeripheralUsageDescription">
             <string>$BLUETOOTH_USAGE_DESCRIPTION</string>
@@ -80,6 +88,13 @@
 
         <hook type="after_prepare" src="hooks/after_prepare.js"/>
 
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <activity android:name="com.megster.cordova.ble.central.NotificationActivity" />
+            <service android:name="com.megster.cordova.ble.central.DfuService" />
+        </config-file>
+
+        <framework src="no.nordicsemi.android:dfu:2.3.0"/>
+
         <source-file src="src/android/BLECentralPlugin.java"
             target-dir="src/com/megster/cordova/ble/central"/>
         <source-file src="src/android/SequentialCallbackContext.java"
@@ -94,6 +109,12 @@
             target-dir="src/com/megster/cordova/ble/central"/>
         <source-file src="src/android/L2CAPContext.java"
             target-dir="src/com/megster/cordova/ble/central"/>
+
+        <source-file src="src/android/DfuService.java"
+            target-dir="src/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/NotificationActivity.java"
+            target-dir="src/com/megster/cordova/ble/central"/>
+
     </platform>
 
     <platform name="browser">
@@ -116,4 +137,11 @@
          <source-file src="src/wp/BLECentralPlugin.cs" />
 
     </platform>
+
+    <!-- because of <framework type="podspec"> for iOS -->
+    <engines>
+        <engine name="cordova" version=">=6.4.0"/>
+        <engine name="cordova-ios" version=">=4.3.0"/>
+    </engines>
+
 </plugin>
